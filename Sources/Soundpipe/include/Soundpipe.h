@@ -1455,6 +1455,11 @@ typedef struct {
     SPFLOAT buf0[SP_TALKBOX_BUFMAX];
     SPFLOAT buf1[SP_TALKBOX_BUFMAX];
     uint32_t K, N, O, pos;
+    SPFLOAT zcr_smooth;
+    SPFLOAT rms_smooth;
+    SPFLOAT last_src;
+    SPFLOAT noise_mix;
+    uint32_t noise_seed;
 } sp_talkbox;
 
 int sp_talkbox_create(sp_talkbox **p);
@@ -1804,3 +1809,5 @@ int sp_padsynth_normalize(int N, SPFLOAT *smp);
 #include "kiss_fft.h"
 #include "kiss_fftr.h"
 #include "vocwrapper.h"
+
+

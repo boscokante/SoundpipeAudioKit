@@ -129,6 +129,14 @@ int sp_talkbox_init(sp_data *sp, sp_talkbox *p)
     memset(p->buf1, 0, SP_TALKBOX_BUFMAX * sizeof(SPFLOAT));
     memset(p->car0, 0, SP_TALKBOX_BUFMAX * sizeof(SPFLOAT));
     memset(p->car1, 0, SP_TALKBOX_BUFMAX * sizeof(SPFLOAT));
+
+    /* ADDED: Initialize internal state for detector and noise */
+    p->noise_seed = 1;
+    p->zcr_smooth = 0;
+    p->rms_smooth = 0;
+    p->last_src = 0;
+    p->noise_mix = 0;
+
     return SP_OK;
 }
 
@@ -138,11 +146,35 @@ int sp_talkbox_compute(sp_data *sp, sp_talkbox *t, SPFLOAT *src, SPFLOAT *exc, S
     SPFLOAT e=t->emphasis, w, o, x, fx=t->FX;
     SPFLOAT p, q, h0=0.3f, h1=0.77f;
     SPFLOAT den;
+    SPFLOAT final_carrier;
 
     t->O = (uint32_t)((0.0001f + 0.0004f * t->quality) * sp->sr);
 
+    /* --- ADDED: Unvoiced Detector, Noise Generator, and Carrier Crossfader --- */
+    /* 1. RMS and ZCR detection, smoothed with a one-pole LPF */
+    SPFLOAT current_rms = fabsf(*src);
+    SPFLOAT current_zcr = (*src > 0 && t->last_src < 0) || (*src < 0 && t->last_src > 0);
+    t->rms_smooth = (0.999 * t->rms_smooth) + (0.001 * current_rms);
+    t->zcr_smooth = (0.999 * t->zcr_smooth) + (0.001 * current_zcr);
+    t->last_src = *src;
+    
+    /* 2. Make the unvoiced decision (hardcoded thresholds for now) */
+    int is_unvoiced = (t->rms_smooth > 0.02) && (t->zcr_smooth > 0.15);
+    
+    /* 3. Smoothly update the noise mix target */
+    SPFLOAT target_mix = is_unvoiced ? 1.0 : 0.0;
+    t->noise_mix = (0.999 * t->noise_mix) + (0.001 * target_mix);
+
+    /* 4. Generate a white noise sample using a simple LCG */
+    t->noise_seed = (t->noise_seed * 1103515245 + 12345) & 0x7FFFFFFF;
+    SPFLOAT noise_sample = ((SPFLOAT)t->noise_seed / 0x7FFFFFFF) * 2.0 - 1.0;
+    
+    /* 5. Crossfade between synthesizer carrier and noise carrier */
+    final_carrier = (*exc * (1.0 - t->noise_mix)) + (noise_sample * t->noise_mix);
+    /* --- END ADDED CODE --- */
+
     o = *src;
-    x = *exc;
+    x = final_carrier; /* MODIFIED: Use the new blended carrier instead of the original 'exc' */
 
     p = t->d0 + h0 * x; 
     t->d0 = t->d1;  
