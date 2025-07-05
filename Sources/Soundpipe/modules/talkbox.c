@@ -159,7 +159,7 @@ int sp_talkbox_compute(sp_data *sp, sp_talkbox *t, SPFLOAT *src, SPFLOAT *exc, S
     t->last_src = *src;
     
     /* 2. Make the unvoiced decision (hardcoded thresholds for now) */
-    int is_unvoiced = (t->rms_smooth > 0.02) && (t->zcr_smooth > 0.15);
+    int is_unvoiced = (t->rms_smooth > 0.01) && (t->zcr_smooth > 0.12);
     
     /* 3. Smoothly update the noise mix target */
     SPFLOAT target_mix = is_unvoiced ? 1.0 : 0.0;
