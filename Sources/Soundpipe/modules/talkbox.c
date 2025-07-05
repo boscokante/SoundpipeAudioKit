@@ -74,7 +74,10 @@ static void lpc(float *buf, float *car, uint32_t n, uint32_t o)
     }
 
     for(i=0; i<n; i++) {
-        x = G * car[i];
+        /* MODIFIED: Use a soft-knee compression formula on the gain with make-up gain */
+        SPFLOAT moderated_gain = (G / (G + 1.0f)) * 1.5f;
+        x = moderated_gain * car[i];
+
         /* lattice filter */
         for(j=o; j>0; j--) { 
             x -= k[j] * z[j-1];
