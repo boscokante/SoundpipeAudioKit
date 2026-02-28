@@ -43,22 +43,18 @@ public:
 
     void process(FrameRange range) override {
         for (int i : range) {
-            float sourceInL = inputSample(0, i);      // modulator input left
-            float sourceInR = inputSample(1, i);      // modulator input right
-            float excitationInL = input2Sample(0, i); // carrier input left
-            float excitationInR = input2Sample(1, i); // carrier input right
-            float outSampleL;
-            float outSampleR;
+            float sourceIn = inputSample(0, i);       // mono voice modulator (mic left channel)
+            float excitationIn = input2Sample(0, i);  // mono carrier (sawtooth, left channel only)
+            float outSample;
 
             float quality = qualityRamp.getAndStep();
             talkboxL->quality = quality;
-            talkboxR->quality = quality;
 
-            sp_talkbox_compute(sp, talkboxL, &sourceInL, &excitationInL, &outSampleL);
-            sp_talkbox_compute(sp, talkboxR, &sourceInR, &excitationInR, &outSampleR);
+            sp_talkbox_compute(sp, talkboxL, &sourceIn, &excitationIn, &outSample);
 
-            outputSample(0, i) = outSampleL;
-            outputSample(1, i) = outSampleR;
+            // Output the same mono signal to both channels
+            outputSample(0, i) = outSample;
+            outputSample(1, i) = outSample;
         }
     }
 };
