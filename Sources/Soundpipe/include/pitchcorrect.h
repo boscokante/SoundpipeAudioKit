@@ -37,6 +37,7 @@ typedef struct {
     float nearest_scale_freq;
     float amount;
     float speed;
+    float portamento_time; // minimum glide time (seconds) for note-to-note transitions
     bool should_smooth_scale_idx;
     bool should_smooth_target_freq;
 
@@ -53,6 +54,7 @@ int pitchcorrect_compute(sp_data *sp, pitchcorrect *p, float *in, float *out, fl
 int pitchcorrect_set_scale_freqs(pitchcorrect *p, float *frequencies, int count);
 int pitchcorrect_set_amount(pitchcorrect *p, float amount);
 int pitchcorrect_set_speed(pitchcorrect *p, float speed);
+int pitchcorrect_set_portamento(pitchcorrect *p, float time);
 
 #ifdef __cplusplus
 }

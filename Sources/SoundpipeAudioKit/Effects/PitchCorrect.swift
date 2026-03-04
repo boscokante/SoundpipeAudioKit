@@ -4,6 +4,7 @@ import AudioKit
 import AudioKitEX
 import AVFoundation
 import CAudioKitEX
+import CSoundpipeAudioKit
 import Tonic
 
 /// Pitch correction
@@ -50,6 +51,41 @@ public class PitchCorrect: Node {
     /// Amount of pitch correction (0-1)
     @Parameter(amountDef) public var amount: AUValue
 
+    /// Specification details for portamento
+    public static let portamentoDef = NodeParameterDef(
+        identifier: "portamento",
+        name: "Portamento",
+        address: akGetParameterAddress("PitchCorrectParameterPortamento"),
+        defaultValue: 0.0,
+        range: 0.0 ... 1.0,
+        unit: .seconds
+    )
+
+    /// Portamento glide time in seconds (minimum glide for note-to-note transitions)
+    @Parameter(portamentoDef) public var portamento: AUValue
+
+    // MARK: - State Reading
+
+    /// The currently detected input frequency in Hz (-1 if no pitch detected)
+    public var detectedFreq: Float {
+        akPitchCorrectGetDetectedFreq(au.dsp)
+    }
+
+    /// Whether the DSP is actively tracking a voice pitch
+    public var correctionActive: Bool {
+        akPitchCorrectGetCorrectionActive(au.dsp)
+    }
+
+    /// The nearest scale frequency target in Hz
+    public var nearestScaleFreq: Float {
+        akPitchCorrectGetNearestScaleFreq(au.dsp)
+    }
+
+    /// The current correction amount in cents
+    public var correctionCents: Float {
+        akPitchCorrectGetCorrectionCents(au.dsp)
+    }
+
     // MARK: - Initialization
 
     /// Initialize this pitch correction node
@@ -65,18 +101,20 @@ public class PitchCorrect: Node {
         _ input: Node,
         key: Key = .C,
         speed: AUValue = speedDef.defaultValue,
-        amount: AUValue = amountDef.defaultValue
+        amount: AUValue = amountDef.defaultValue,
+        portamento: AUValue = portamentoDef.defaultValue
     ) {
         self.input = input
         self.key = key
-        
+
         updateScaleFrequencies()
-        
+
         setupParameters()
 
         self.speed = speed
         self.amount = amount
-        
+        self.portamento = portamento
+
         updateScaleFrequencies()
     }
     

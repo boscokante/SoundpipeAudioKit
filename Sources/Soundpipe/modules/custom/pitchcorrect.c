@@ -25,6 +25,7 @@ int pitchcorrect_init(sp_data *sp, pitchcorrect *p) {
     sp_butlp_init(sp, p->lpf);
     sp_port_create(&p->scale_freq_port);
     sp_port_init(sp, p->scale_freq_port, 0.0);
+    p->portamento_time = 0.0f;
     p->base_freq = 200.0;
     p->pshift_freq_ratio = 1.0f;
     p->cur_correction_amt_cents = 0.0f;
@@ -43,6 +44,11 @@ int pitchcorrect_init(sp_data *sp, pitchcorrect *p) {
     p->cur_freq_ratio = -1;
     p->amount = 1.0f;
     p->speed = 1.0f;
+    p->pitchcorrect_scale_freqs = NULL;
+    p->pitchcorrect_scale_freqs_count = 0;
+    p->tmp_scale_freqs = NULL;
+    p->tmp_scale_freqs_count = 0;
+    p->should_update_scale_freqs = false;
     return SP_OK;
 }
 
@@ -155,6 +161,10 @@ int compute_nearest_scale_freq_index(sp_data *sp, pitchcorrect *p) {
 
 int pitchcorrect_compute(sp_data *sp, pitchcorrect *p, float *in, float *out, float rms) {
     if (p->should_update_scale_freqs) {
+        // Free old scale freqs (tmp_scale_freqs is the new allocation)
+        if (p->pitchcorrect_scale_freqs != NULL && p->pitchcorrect_scale_freqs != p->tmp_scale_freqs) {
+            free(p->pitchcorrect_scale_freqs);
+        }
         p->pitchcorrect_scale_freqs = p->tmp_scale_freqs;
         p->pitchcorrect_scale_freqs_count = p->tmp_scale_freqs_count;
         p->should_update_scale_freqs = false;
@@ -225,6 +235,10 @@ int pitchcorrect_compute(sp_data *sp, pitchcorrect *p, float *in, float *out, fl
 }
 
 int pitchcorrect_set_scale_freqs(pitchcorrect *p, float *frequencies, int count) {
+    // Free previous tmp allocation to prevent memory leak
+    if (p->tmp_scale_freqs != NULL && p->tmp_scale_freqs != p->pitchcorrect_scale_freqs) {
+        free(p->tmp_scale_freqs);
+    }
     float *new_freqs = malloc(sizeof(float) * count);
     memcpy(new_freqs, frequencies, sizeof(float) * count);
     p->tmp_scale_freqs = new_freqs;
@@ -240,6 +254,17 @@ int pitchcorrect_set_amount(pitchcorrect *p, float amount) {
 
 int pitchcorrect_set_speed(pitchcorrect *p, float speed) {
     p->speed = speed;
-    p->scale_freq_port->htime = -0.05 * speed + 0.05;
+    float correction_time = -0.05f * speed + 0.05f;
+    // Use portamento_time as floor so note-to-note transitions always glide
+    p->scale_freq_port->htime = (p->portamento_time > correction_time)
+        ? p->portamento_time : correction_time;
+    return SP_OK;
+}
+
+int pitchcorrect_set_portamento(pitchcorrect *p, float time) {
+    p->portamento_time = time;
+    // Reapply so the floor takes effect immediately
+    float correction_time = -0.05f * p->speed + 0.05f;
+    p->scale_freq_port->htime = (time > correction_time) ? time : correction_time;
     return SP_OK;
 }
