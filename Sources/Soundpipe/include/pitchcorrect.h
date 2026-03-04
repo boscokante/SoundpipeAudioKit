@@ -40,6 +40,8 @@ typedef struct {
     float portamento_time; // minimum glide time (seconds) for note-to-note transitions
     bool should_smooth_scale_idx;
     bool should_smooth_target_freq;
+    float prev_stable_freq;  // last accepted detected frequency for octave error rejection
+    int octave_jump_holdoff;  // samples to hold off after rejecting an octave jump
 
     bool should_update_scale_freqs;
     float *pitchcorrect_scale_freqs;
