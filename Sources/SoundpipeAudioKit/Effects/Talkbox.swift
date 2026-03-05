@@ -39,6 +39,19 @@ public class Talkbox: Node {
     /// Quality parameter, from 0 (lowest fidelity) to 1 (highest fidelity)
     @Parameter(qualityDef) public var quality: AUValue
 
+    /// Volume of white noise generated for unvoiced/sibilant sounds (S, SH, etc.)
+    public static let noiseVolumeDef = NodeParameterDef(
+        identifier: "noiseVolume",
+        name: "Noise Volume",
+        address: akGetParameterAddress("TalkboxParameterNoiseVolume"),
+        defaultValue: 0.15,
+        range: 0 ... 1,
+        unit: .generic
+    )
+
+    /// Noise volume parameter — controls loudness of white noise for sibilants
+    @Parameter(noiseVolumeDef) public var noiseVolume: AUValue
+
     // MARK: - Initialization
 
     /// Initialize this talkbox node
@@ -47,11 +60,13 @@ public class Talkbox: Node {
     ///   - input: Source signal that shapes the excitation (modulator)
     ///   - excitation: The signal to be excited (carrier)
     ///   - quality: Quality of the talkbox sound (0=lowest fidelity, 1=highest fidelity)
+    ///   - noiseVolume: Volume of white noise for sibilants (0=silent, 1=full)
     ///
     public init(
         _ input: Node,
         excitation: Node,
-        quality: AUValue = qualityDef.defaultValue
+        quality: AUValue = qualityDef.defaultValue,
+        noiseVolume: AUValue = noiseVolumeDef.defaultValue
     ) {
         self.input = input
         self.excitation = excitation
@@ -59,5 +74,6 @@ public class Talkbox: Node {
         setupParameters()
 
         self.quality = quality
+        self.noiseVolume = noiseVolume
     }
 }

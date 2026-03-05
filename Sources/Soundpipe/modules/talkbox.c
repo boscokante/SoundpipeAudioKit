@@ -139,6 +139,7 @@ int sp_talkbox_init(sp_data *sp, sp_talkbox *p)
     p->rms_smooth = 0;
     p->last_src = 0;
     p->noise_mix = 0;
+    p->noise_volume = 0.15f;
 
     return SP_OK;
 }
@@ -172,8 +173,8 @@ int sp_talkbox_compute(sp_data *sp, sp_talkbox *t, SPFLOAT *src, SPFLOAT *exc, S
     t->noise_seed = (t->noise_seed * 1103515245 + 12345) & 0x7FFFFFFF;
     SPFLOAT noise_sample = ((SPFLOAT)t->noise_seed / 0x7FFFFFFF) * 2.0 - 1.0;
     
-    /* Reduce the volume of the white noise */
-    noise_sample *= 0.15f;
+    /* Scale noise by configurable volume (default 0.15) */
+    noise_sample *= t->noise_volume;
     
     /* 5. Crossfade between synthesizer carrier and noise carrier */
     final_carrier = (*exc * (1.0 - t->noise_mix)) + (noise_sample * t->noise_mix);

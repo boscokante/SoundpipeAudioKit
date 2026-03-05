@@ -1460,6 +1460,7 @@ typedef struct {
     SPFLOAT last_src;
     SPFLOAT noise_mix;
     uint32_t noise_seed;
+    SPFLOAT noise_volume;
 } sp_talkbox;
 
 int sp_talkbox_create(sp_talkbox **p);

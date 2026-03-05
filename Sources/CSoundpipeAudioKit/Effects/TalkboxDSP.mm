@@ -6,6 +6,7 @@
 
 enum TalkboxParameter : AUParameterAddress {
     TalkboxParameterQuality,
+    TalkboxParameterNoiseVolume,
 };
 
 class TalkboxDSP : public SoundpipeDSPBase {
@@ -13,11 +14,13 @@ private:
     sp_talkbox *talkboxL;
     sp_talkbox *talkboxR;
     ParameterRamper qualityRamp{1.0};
+    ParameterRamper noiseVolumeRamp{0.15};
 
 public:
     TalkboxDSP() {
         inputBufferLists.resize(2);  // Set up for two input streams
         parameters[TalkboxParameterQuality] = &qualityRamp;
+        parameters[TalkboxParameterNoiseVolume] = &noiseVolumeRamp;
     }
 
     void init(int channelCount, double sampleRate) override {
@@ -48,7 +51,9 @@ public:
             float outSample;
 
             float quality = qualityRamp.getAndStep();
+            float noiseVolume = noiseVolumeRamp.getAndStep();
             talkboxL->quality = quality;
+            talkboxL->noise_volume = noiseVolume;
 
             sp_talkbox_compute(sp, talkboxL, &sourceIn, &excitationIn, &outSample);
 
@@ -61,3 +66,4 @@ public:
 
 AK_REGISTER_DSP(TalkboxDSP, "tbox")
 AK_REGISTER_PARAMETER(TalkboxParameterQuality)
+AK_REGISTER_PARAMETER(TalkboxParameterNoiseVolume)
