@@ -14,7 +14,7 @@ private:
     sp_talkbox *talkboxL;
     sp_talkbox *talkboxR;
     ParameterRamper qualityRamp{1.0};
-    ParameterRamper noiseVolumeRamp{0.15};
+    ParameterRamper noiseVolumeRamp{0.02};
 
 public:
     TalkboxDSP() {

@@ -44,7 +44,7 @@ public class Talkbox: Node {
         identifier: "noiseVolume",
         name: "Noise Volume",
         address: akGetParameterAddress("TalkboxParameterNoiseVolume"),
-        defaultValue: 0.15,
+        defaultValue: 0.02,
         range: 0 ... 1,
         unit: .generic
     )

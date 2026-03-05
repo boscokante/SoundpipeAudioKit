@@ -139,7 +139,7 @@ int sp_talkbox_init(sp_data *sp, sp_talkbox *p)
     p->rms_smooth = 0;
     p->last_src = 0;
     p->noise_mix = 0;
-    p->noise_volume = 0.15f;
+    p->noise_volume = 0.02f;
     p->exc_envelope = 0;
 
     return SP_OK;
