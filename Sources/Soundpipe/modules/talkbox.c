@@ -178,11 +178,12 @@ int sp_talkbox_compute(sp_data *sp, sp_talkbox *t, SPFLOAT *src, SPFLOAT *exc, S
     noise_sample *= t->noise_volume;
 
     /* Track excitation envelope so noise is gated when no key is pressed (carrier = 0) */
+    /* ~10ms release at 48kHz: 0.98^480 ≈ 0.00006 */
     SPFLOAT exc_abs = fabsf(*exc);
     t->exc_envelope = (exc_abs > t->exc_envelope)
-        ? (0.99 * t->exc_envelope + 0.01 * exc_abs)   /* fast attack */
-        : (0.9999 * t->exc_envelope);                   /* slow release */
-    SPFLOAT exc_gate = (t->exc_envelope > 0.001) ? 1.0 : 0.0;
+        ? (0.95 * t->exc_envelope + 0.05 * exc_abs)   /* fast attack (~1ms) */
+        : (0.98 * t->exc_envelope);                     /* fast release (~10ms) */
+    SPFLOAT exc_gate = (t->exc_envelope > 0.0001) ? 1.0 : 0.0;
 
     /* 5. Crossfade between synthesizer carrier and noise carrier, gated by excitation */
     final_carrier = (*exc * (1.0 - t->noise_mix)) + (noise_sample * t->noise_mix * exc_gate);
