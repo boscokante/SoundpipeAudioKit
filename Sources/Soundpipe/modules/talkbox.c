@@ -140,7 +140,6 @@ int sp_talkbox_init(sp_data *sp, sp_talkbox *p)
     p->last_src = 0;
     p->noise_mix = 0;
     p->noise_volume = 0.02f;
-    p->exc_envelope = 0;
 
     return SP_OK;
 }
@@ -177,16 +176,9 @@ int sp_talkbox_compute(sp_data *sp, sp_talkbox *t, SPFLOAT *src, SPFLOAT *exc, S
     /* Scale noise by configurable volume (default 0.15) */
     noise_sample *= t->noise_volume;
 
-    /* Track excitation envelope so noise is gated when no key is pressed (carrier = 0) */
-    /* ~10ms release at 48kHz: 0.98^480 ≈ 0.00006 */
-    SPFLOAT exc_abs = fabsf(*exc);
-    t->exc_envelope = (exc_abs > t->exc_envelope)
-        ? (0.95 * t->exc_envelope + 0.05 * exc_abs)   /* fast attack (~1ms) */
-        : (0.98 * t->exc_envelope);                     /* fast release (~10ms) */
-    SPFLOAT exc_gate = (t->exc_envelope > 0.0001) ? 1.0 : 0.0;
-
-    /* 5. Crossfade between synthesizer carrier and noise carrier, gated by excitation */
-    final_carrier = (*exc * (1.0 - t->noise_mix)) + (noise_sample * t->noise_mix * exc_gate);
+    /* 5. Crossfade between synthesizer carrier and noise carrier.
+     * Noise is NOT gated by key press — sibilance passes through like a traditional talkbox. */
+    final_carrier = (*exc * (1.0 - t->noise_mix)) + (noise_sample * t->noise_mix);
     /* --- END ADDED CODE --- */
 
     o = *src;
