@@ -200,32 +200,9 @@ int pitchcorrect_compute(sp_data *sp, pitchcorrect *p, float *in, float *out, fl
         }
     }
 
-    // --- Octave error rejection ---
-    // If detected_freq jumps by more than ~7 semitones from the previous stable reading,
-    // it's likely a Yin octave error. Reject and keep the previous value.
-    if (p->detected_freq > min_freq && p->detected_freq < max_freq) {
-        if (p->prev_stable_freq > 0) {
-            float ratio = p->detected_freq / p->prev_stable_freq;
-            // Allow up to ~7 semitones (ratio 1.5) of legitimate pitch change
-            if (ratio > 1.55f || ratio < 0.645f) {
-                // Likely octave error — reject this reading
-                if (p->octave_jump_holdoff < 2048) {
-                    p->detected_freq = p->prev_stable_freq;
-                    p->octave_jump_holdoff++;
-                } else {
-                    // Held off long enough — accept as genuine pitch change
-                    p->prev_stable_freq = p->detected_freq;
-                    p->octave_jump_holdoff = 0;
-                }
-            } else {
-                // Normal pitch movement — accept and update stable reference
-                p->prev_stable_freq = (p->prev_stable_freq * 0.9f) + (p->detected_freq * 0.1f);
-                p->octave_jump_holdoff = 0;
-            }
-        } else {
-            p->prev_stable_freq = p->detected_freq;
-        }
-    }
+    // No octave error rejection — with a fixed target (pitchSnap) or scale (pitchFix),
+    // the ratio smoothing on pshift_freq_ratio handles brief Yin detection glitches.
+    // Removing rejection allows ±2 octave correction range without blocking legitimate pitch changes.
 
     if (p->detected_freq == -1) {
         p->should_smooth_scale_idx = false;
@@ -246,8 +223,8 @@ int pitchcorrect_compute(sp_data *sp, pitchcorrect *p, float *in, float *out, fl
         p->base_freq = p->detected_freq;
     }
 
-    // Clamp pitch shift ratio to ~±7 semitones to prevent octave jumps
-    if (p->cur_freq_ratio > 0.67f && p->cur_freq_ratio < 1.5f) {
+    // Clamp pitch shift ratio to ±24 semitones (two octaves)
+    if (p->cur_freq_ratio > 0.25f && p->cur_freq_ratio < 4.0f) {
         p->pshift_freq_ratio = (p->pshift_freq_ratio * 0.8f) + (p->cur_freq_ratio * 0.2f);
     }
 
